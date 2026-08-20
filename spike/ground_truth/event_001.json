@@ -1,0 +1,156 @@
+{
+  "objects": [
+    {
+      "name": "운영자",
+      "category": "actor",
+      "properties": ["이벤트 생성 권한", "운영 콘솔 접근 권한"],
+      "confidence": 1.0,
+      "evidence_quote": "운영자는 운영 콘솔에 로그인하여 새 출석 체크 이벤트를 생성합니다."
+    },
+    {
+      "name": "플레이어",
+      "category": "actor",
+      "properties": ["누적 출석일", "우편함"],
+      "confidence": 1.0,
+      "evidence_quote": "플레이어가 게임에 접속하여 이벤트 메뉴에서 출석 체크 버튼을 클릭합니다."
+    },
+    {
+      "name": "출석 체크 이벤트",
+      "category": "domain",
+      "properties": ["이벤트 기간", "최대 보상일 수", "일차별 보상 아이템 목록", "활성화 상태"],
+      "confidence": 1.0,
+      "evidence_quote": "이벤트 기간, 최대 보상일 수, 일차별 보상 아이템 목록을 설정합니다."
+    },
+    {
+      "name": "출석 보상",
+      "category": "domain",
+      "properties": ["보상 아이템", "유효 기간", "일차"],
+      "confidence": 1.0,
+      "evidence_quote": "누적 출석일을 기준으로 해당 일차의 출석 보상 아이템이 결정됩니다."
+    },
+    {
+      "name": "누적 출석일",
+      "category": "domain",
+      "properties": ["플레이어 ID", "출석일 수"],
+      "confidence": 1.0,
+      "evidence_quote": "시스템은 해당 플레이어의 누적 출석일을 조회하고, 당일 출석 여부를 확인합니다."
+    },
+    {
+      "name": "출석 체크 트랜잭션",
+      "category": "tx",
+      "properties": ["처리 상태", "생성 일시"],
+      "confidence": 0.95,
+      "evidence_quote": "출석이 확인되면 출석 체크 트랜잭션이 생성됩니다."
+    },
+    {
+      "name": "출석 로그",
+      "category": "record",
+      "properties": ["플레이어 ID", "출석 일시", "누적 출석일", "지급 보상 아이템"],
+      "confidence": 1.0,
+      "evidence_quote": "출석 로그에는 플레이어 ID, 출석 일시, 누적 출석일, 지급된 보상 아이템 정보가 포함됩니다."
+    }
+  ],
+  "links": [
+    {
+      "from_name": "운영자",
+      "to_name": "출석 체크 이벤트",
+      "label": "생성/관리",
+      "cardinality": "1:N",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "운영자는 운영 콘솔에 로그인하여 새 출석 체크 이벤트를 생성합니다."
+    },
+    {
+      "from_name": "플레이어",
+      "to_name": "출석 체크 이벤트",
+      "label": "참여",
+      "cardinality": "N:M",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "플레이어가 게임에 접속하여 이벤트 메뉴에서 출석 체크 버튼을 클릭합니다."
+    },
+    {
+      "from_name": "출석 체크 이벤트",
+      "to_name": "출석 보상",
+      "label": "제공",
+      "cardinality": "1:N",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "일차별 보상 아이템 목록을 설정합니다."
+    },
+    {
+      "from_name": "플레이어",
+      "to_name": "누적 출석일",
+      "label": "보유",
+      "cardinality": "1:1",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "시스템은 해당 플레이어의 누적 출석일을 조회하고"
+    },
+    {
+      "from_name": "누적 출석일",
+      "to_name": "출석 보상",
+      "label": "결정",
+      "cardinality": "N:1",
+      "is_derived": true,
+      "confidence": 0.95,
+      "evidence_quote": "누적 출석일을 기준으로 해당 일차의 출석 보상 아이템이 결정됩니다."
+    },
+    {
+      "from_name": "플레이어",
+      "to_name": "출석 체크 트랜잭션",
+      "label": "수행",
+      "cardinality": "1:N",
+      "is_derived": false,
+      "confidence": 0.9,
+      "evidence_quote": "출석이 확인되면 출석 체크 트랜잭션이 생성됩니다."
+    },
+    {
+      "from_name": "출석 체크 트랜잭션",
+      "to_name": "출석 로그",
+      "label": "기록 생성",
+      "cardinality": "1:1",
+      "is_derived": false,
+      "confidence": 0.95,
+      "evidence_quote": "모든 출석 체크 결과는 출석 로그에 저장됩니다."
+    }
+  ],
+  "actions": [
+    {
+      "name": "이벤트 생성",
+      "actor_name": "운영자",
+      "reads": [],
+      "creates": ["출석 체크 이벤트"],
+      "updates": [],
+      "preconditions": "운영 콘솔 로그인 완료",
+      "outcomes": "출석 체크 이벤트가 활성화되어 플레이어에게 노출됨",
+      "trigger": "manual_ui",
+      "confidence": 1.0,
+      "evidence_quote": "운영자는 운영 콘솔에 로그인하여 새 출석 체크 이벤트를 생성합니다."
+    },
+    {
+      "name": "출석 체크",
+      "actor_name": "플레이어",
+      "reads": ["누적 출석일"],
+      "creates": ["출석 체크 트랜잭션"],
+      "updates": ["누적 출석일"],
+      "preconditions": "당일 미출석 상태, 이벤트 활성화 중",
+      "outcomes": "출석 보상 지급 및 출석 로그 기록",
+      "trigger": "manual_ui",
+      "confidence": 1.0,
+      "evidence_quote": "플레이어가 게임에 접속하여 이벤트 메뉴에서 출석 체크 버튼을 클릭합니다."
+    },
+    {
+      "name": "보상 지급",
+      "actor_name": "게임 서버",
+      "reads": ["누적 출석일", "출석 체크 이벤트"],
+      "creates": ["출석 로그"],
+      "updates": ["출석 보상"],
+      "preconditions": "출석 체크 트랜잭션 생성 완료",
+      "outcomes": "보상 아이템이 플레이어 우편함으로 전송됨",
+      "trigger": "scheduled",
+      "confidence": 0.9,
+      "evidence_quote": "보상 아이템은 플레이어 우편함으로 자동 지급되며, 유효 기간 내 수령해야 합니다."
+    }
+  ]
+}

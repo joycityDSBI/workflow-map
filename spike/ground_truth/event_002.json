@@ -1,0 +1,163 @@
+{
+  "objects": [
+    {
+      "name": "플레이어",
+      "category": "actor",
+      "properties": ["파티 구성 권한", "인벤토리", "우편함"],
+      "confidence": 1.0,
+      "evidence_quote": "플레이어 파티가 레이드를 완료하면 게임 서버가 클리어 결과를 실시간으로 검증합니다."
+    },
+    {
+      "name": "운영팀",
+      "category": "actor",
+      "properties": ["보상 테이블 관리 권한", "모니터링 권한"],
+      "confidence": 1.0,
+      "evidence_quote": "운영팀이 미리 설정한 보상 테이블을 기준으로 보상 등급이 자동 산정됩니다."
+    },
+    {
+      "name": "레이드",
+      "category": "domain",
+      "properties": ["레이드 ID", "클리어 소요 시간", "파티 구성원 목록"],
+      "confidence": 1.0,
+      "evidence_quote": "레이드 난이도, 클리어 소요 시간, 파티 구성원 목록이 확인됩니다."
+    },
+    {
+      "name": "레이드 난이도",
+      "category": "domain",
+      "properties": ["난이도 유형", "보상 테이블"],
+      "confidence": 1.0,
+      "evidence_quote": "일반, 고급, 영웅 난이도별로 클리어 보상 아이템 종류와 수량이 다르게 책정됩니다."
+    },
+    {
+      "name": "클리어 보상",
+      "category": "domain",
+      "properties": ["보상 아이템", "보상 수량", "보상 등급"],
+      "confidence": 1.0,
+      "evidence_quote": "레이드 난이도를 기준으로 클리어 보상 등급이 결정됩니다."
+    },
+    {
+      "name": "보상 지급 트랜잭션",
+      "category": "tx",
+      "properties": ["트랜잭션 ID", "파티원 목록", "지급 상태"],
+      "confidence": 0.95,
+      "evidence_quote": "보상 지급 트랜잭션이 생성되고 파티원 전원의 계정으로 클리어 보상이 지급됩니다."
+    },
+    {
+      "name": "클리어 기록",
+      "category": "record",
+      "properties": ["레이드 ID", "클리어 일시", "파티원 목록", "레이드 난이도", "클리어 보상 내역"],
+      "confidence": 1.0,
+      "evidence_quote": "클리어 기록에는 레이드 ID, 클리어 일시, 파티원 목록, 적용된 레이드 난이도, 지급된 클리어 보상 내역이 저장됩니다."
+    },
+    {
+      "name": "보상 지급 로그",
+      "category": "record",
+      "properties": ["지급 일시", "수혜 플레이어", "지급 아이템"],
+      "confidence": 1.0,
+      "evidence_quote": "보상 지급 로그는 별도 테이블에 기록되어 운영팀 모니터링 및 CS 처리에 활용됩니다."
+    }
+  ],
+  "links": [
+    {
+      "from_name": "플레이어",
+      "to_name": "레이드",
+      "label": "참여/클리어",
+      "cardinality": "N:M",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "플레이어 파티가 레이드를 완료하면"
+    },
+    {
+      "from_name": "운영팀",
+      "to_name": "레이드",
+      "label": "관리",
+      "cardinality": "1:N",
+      "is_derived": false,
+      "confidence": 0.9,
+      "evidence_quote": "운영팀: 레이드 보상 정책 수립, 보상 테이블 관리 및 이상 지급 모니터링"
+    },
+    {
+      "from_name": "레이드",
+      "to_name": "레이드 난이도",
+      "label": "분류",
+      "cardinality": "N:1",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "레이드 난이도에 따라 클리어 보상 등급이 차등 적용됩니다."
+    },
+    {
+      "from_name": "레이드 난이도",
+      "to_name": "클리어 보상",
+      "label": "결정",
+      "cardinality": "1:N",
+      "is_derived": true,
+      "confidence": 1.0,
+      "evidence_quote": "레이드 난이도를 기준으로 클리어 보상 등급이 결정됩니다."
+    },
+    {
+      "from_name": "보상 지급 트랜잭션",
+      "to_name": "보상 지급 로그",
+      "label": "기록",
+      "cardinality": "1:1",
+      "is_derived": false,
+      "confidence": 0.95,
+      "evidence_quote": "보상 지급 로그는 별도 테이블에 기록됩니다."
+    },
+    {
+      "from_name": "플레이어",
+      "to_name": "클리어 기록",
+      "label": "보유",
+      "cardinality": "1:N",
+      "is_derived": false,
+      "confidence": 0.9,
+      "evidence_quote": "클리어 기록에는 파티원 목록이 저장됩니다."
+    },
+    {
+      "from_name": "클리어 기록",
+      "to_name": "보상 지급 트랜잭션",
+      "label": "트리거",
+      "cardinality": "1:1",
+      "is_derived": true,
+      "confidence": 0.85,
+      "evidence_quote": "클리어 결과를 실시간으로 검증합니다. 보상 지급 트랜잭션이 생성되고"
+    }
+  ],
+  "actions": [
+    {
+      "name": "클리어 결과 검증",
+      "actor_name": "게임 서버",
+      "reads": ["레이드", "레이드 난이도"],
+      "creates": ["클리어 기록"],
+      "updates": [],
+      "preconditions": "플레이어 파티가 레이드 완료",
+      "outcomes": "클리어 기록 저장 또는 검증 실패 처리",
+      "trigger": "scheduled",
+      "confidence": 1.0,
+      "evidence_quote": "플레이어 파티가 레이드를 완료하면 게임 서버가 클리어 결과를 실시간으로 검증합니다."
+    },
+    {
+      "name": "보상 지급",
+      "actor_name": "게임 서버",
+      "reads": ["클리어 기록", "레이드 난이도", "클리어 보상"],
+      "creates": ["보상 지급 트랜잭션", "보상 지급 로그"],
+      "updates": [],
+      "preconditions": "클리어 검증 성공, 주간 보상 중복 없음",
+      "outcomes": "파티원 전원의 인벤토리에 클리어 보상 지급",
+      "trigger": "scheduled",
+      "confidence": 1.0,
+      "evidence_quote": "보상 지급 트랜잭션이 생성되고 파티원 전원의 계정으로 클리어 보상이 지급됩니다."
+    },
+    {
+      "name": "보상 테이블 관리",
+      "actor_name": "운영팀",
+      "reads": [],
+      "creates": [],
+      "updates": ["레이드 난이도", "클리어 보상"],
+      "preconditions": "운영 콘솔 접근 권한",
+      "outcomes": "난이도별 보상 테이블 업데이트",
+      "trigger": "manual_ui",
+      "confidence": 0.9,
+      "evidence_quote": "운영팀이 미리 설정한 보상 테이블을 기준으로 보상 등급이 자동 산정됩니다."
+    }
+  ]
+}

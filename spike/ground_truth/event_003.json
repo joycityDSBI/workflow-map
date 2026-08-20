@@ -1,0 +1,168 @@
+{
+  "objects": [
+    {
+      "name": "CS 담당자",
+      "category": "actor",
+      "properties": ["티켓 처리 권한", "보상 수동 지급 권한", "환불 처리 권한"],
+      "confidence": 1.0,
+      "evidence_quote": "CS 담당자는 CS 티켓을 접수하고 이벤트 보상 이슈의 유형을 분류합니다."
+    },
+    {
+      "name": "플레이어",
+      "category": "actor",
+      "properties": ["플레이어 ID", "우편함"],
+      "confidence": 1.0,
+      "evidence_quote": "플레이어는 고객 지원 포털에서 CS 티켓을 제출합니다."
+    },
+    {
+      "name": "CS 티켓",
+      "category": "cs",
+      "properties": ["플레이어 ID", "이벤트명", "문제 발생 일시", "문제 내용", "증거 자료"],
+      "confidence": 1.0,
+      "evidence_quote": "티켓에는 플레이어 ID, 이벤트명, 문제 발생 일시, 상세 문제 내용이 포함됩니다."
+    },
+    {
+      "name": "이벤트 보상 이슈",
+      "category": "cs",
+      "properties": ["이슈 유형", "원인 분류"],
+      "confidence": 1.0,
+      "evidence_quote": "CS 담당자는 CS 티켓을 접수하고 이벤트 보상 이슈의 유형을 분류합니다."
+    },
+    {
+      "name": "환불",
+      "category": "cs",
+      "properties": ["환불 금액", "환불 사유", "처리 상태"],
+      "confidence": 1.0,
+      "evidence_quote": "운영 또는 시스템 오류로 인한 과금 문제 시 환불 처리를 진행합니다."
+    },
+    {
+      "name": "이슈 보상",
+      "category": "domain",
+      "properties": ["보상 아이템", "지급 사유"],
+      "confidence": 0.95,
+      "evidence_quote": "보상 미지급이 확인된 경우 이슈 보상을 플레이어 우편함으로 수동 지급합니다."
+    },
+    {
+      "name": "CS 처리 로그",
+      "category": "record",
+      "properties": ["티켓 ID", "CS 담당자 ID", "처리 일시", "처리 유형", "지급/환불 내역"],
+      "confidence": 1.0,
+      "evidence_quote": "CS 처리 로그에는 티켓 ID, CS 담당자 ID, 처리 일시, 처리 유형, 지급 또는 환불 내역이 포함됩니다."
+    }
+  ],
+  "links": [
+    {
+      "from_name": "플레이어",
+      "to_name": "CS 티켓",
+      "label": "제출",
+      "cardinality": "1:N",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "플레이어는 고객 지원 포털에서 CS 티켓을 제출합니다."
+    },
+    {
+      "from_name": "CS 담당자",
+      "to_name": "CS 티켓",
+      "label": "처리",
+      "cardinality": "N:M",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "CS 담당자는 CS 티켓을 접수하고 이벤트 보상 이슈의 유형을 분류합니다."
+    },
+    {
+      "from_name": "CS 티켓",
+      "to_name": "이벤트 보상 이슈",
+      "label": "분류",
+      "cardinality": "N:1",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "이벤트 보상 이슈의 유형을 분류합니다."
+    },
+    {
+      "from_name": "CS 담당자",
+      "to_name": "이슈 보상",
+      "label": "수동 지급",
+      "cardinality": "1:N",
+      "is_derived": false,
+      "confidence": 0.95,
+      "evidence_quote": "이슈 보상을 플레이어 우편함으로 수동 지급합니다."
+    },
+    {
+      "from_name": "CS 담당자",
+      "to_name": "환불",
+      "label": "처리",
+      "cardinality": "1:N",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "운영 또는 시스템 오류로 인한 과금 문제 시 환불 처리를 진행합니다."
+    },
+    {
+      "from_name": "CS 티켓",
+      "to_name": "CS 처리 로그",
+      "label": "기록",
+      "cardinality": "1:1",
+      "is_derived": false,
+      "confidence": 1.0,
+      "evidence_quote": "모든 처리 결과는 CS 처리 로그에 저장됩니다."
+    },
+    {
+      "from_name": "이벤트 보상 이슈",
+      "to_name": "이슈 보상",
+      "label": "결정",
+      "cardinality": "1:1",
+      "is_derived": true,
+      "confidence": 0.85,
+      "evidence_quote": "보상 미지급이 확인된 경우 이슈 보상을 플레이어 우편함으로 수동 지급합니다."
+    }
+  ],
+  "actions": [
+    {
+      "name": "CS 티켓 접수",
+      "actor_name": "플레이어",
+      "reads": [],
+      "creates": ["CS 티켓"],
+      "updates": [],
+      "preconditions": "고객 지원 포털 로그인",
+      "outcomes": "CS 티켓 제출 완료, CS 담당자에게 배정",
+      "trigger": "manual_ui",
+      "confidence": 1.0,
+      "evidence_quote": "플레이어는 고객 지원 포털에서 CS 티켓을 제출합니다."
+    },
+    {
+      "name": "원인 분석",
+      "actor_name": "CS 담당자",
+      "reads": ["CS 티켓", "이벤트 보상 이슈"],
+      "creates": [],
+      "updates": ["이벤트 보상 이슈"],
+      "preconditions": "CS 티켓 배정 완료",
+      "outcomes": "이슈 유형 분류 완료 (운영 오류 / 시스템 버그 / 플레이어 오인)",
+      "trigger": "manual_ui",
+      "confidence": 1.0,
+      "evidence_quote": "이슈 유형은 운영 오류, 시스템 버그, 플레이어 오인 중 하나로 분류됩니다."
+    },
+    {
+      "name": "이슈 보상 지급",
+      "actor_name": "CS 담당자",
+      "reads": ["이벤트 보상 이슈", "CS 티켓"],
+      "creates": ["CS 처리 로그"],
+      "updates": ["이슈 보상"],
+      "preconditions": "보상 미지급 원인 확인 완료",
+      "outcomes": "이슈 보상이 플레이어 우편함으로 지급됨",
+      "trigger": "manual_ui",
+      "confidence": 1.0,
+      "evidence_quote": "보상 미지급이 확인된 경우 이슈 보상을 플레이어 우편함으로 수동 지급합니다."
+    },
+    {
+      "name": "환불 처리",
+      "actor_name": "CS 담당자",
+      "reads": ["CS 티켓", "이벤트 보상 이슈"],
+      "creates": ["환불", "CS 처리 로그"],
+      "updates": [],
+      "preconditions": "과금 오류 원인 확인 완료, 환불 금액이 기준치 이하이거나 팀장 승인 완료",
+      "outcomes": "환불 처리 완료 및 CS 처리 로그 기록",
+      "trigger": "manual_ui",
+      "confidence": 1.0,
+      "evidence_quote": "운영 또는 시스템 오류로 인한 과금 문제 시 환불 처리를 진행합니다."
+    }
+  ]
+}
