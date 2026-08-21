@@ -46,8 +46,11 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_FROM_EMAIL: str = "workflow-map@joycity.com"
 
-    # ── Anthropic ─────────────────────────────────────────────────────────────
-    ANTHROPIC_API_KEY: str = ""
+    # ── Vertex AI (Claude via GCP) ────────────────────────────────────────────
+    # 인증: GCP ADC 자동 처리 (VM 서비스 계정 또는 gcloud auth application-default login)
+    GCP_PROJECT_ID: str = ""
+    VERTEX_LOCATION: str = "us-east5"
+    VERTEX_MODEL_ID: str = "claude-sonnet-5@20251001"
 
     # ── Git ───────────────────────────────────────────────────────────────────
     GIT_REMOTE_URL: str = "https://github.com/joycityDSBI/workflow-map"

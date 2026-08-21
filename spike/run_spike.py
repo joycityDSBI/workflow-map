@@ -1,8 +1,8 @@
 """
 run_spike.py — Accuracy spike runner for JoyCity Ontology Builder.
 
-Reads Korean event operation documents (.md), calls the Claude API to extract
-ontology entities (Objects, Links, Actions), and saves results as JSON files.
+Reads Korean event operation documents (.md), calls Claude via Vertex AI to
+extract ontology entities (Objects, Links, Actions), and saves results as JSON.
 
 Usage:
     python run_spike.py [--docs-dir PATH] [--max-docs N]
@@ -14,8 +14,10 @@ Examples:
     # Full spike against exported Notion docs
     python run_spike.py --docs-dir /path/to/notion-export --max-docs 50
 
-Environment:
-    ANTHROPIC_API_KEY  — required (or use a .env file)
+Environment (Vertex AI — no API key needed, uses GCP ADC):
+    GCP_PROJECT_ID   — GCP 프로젝트 ID (필수)
+    VERTEX_LOCATION  — Vertex AI 리전 (기본값: us-east5)
+    VERTEX_MODEL_ID  — Vertex AI 모델 ID (기본값: claude-sonnet-5@20251001)
 """
 
 import argparse
@@ -34,7 +36,6 @@ from prompt_template import SYSTEM_PROMPT, build_user_prompt
 # Configuration
 # ---------------------------------------------------------------------------
 
-MODEL = "claude-sonnet-5"
 MAX_TOKENS = 4096
 MAX_RETRIES = 3
 RESULTS_DIR = Path("results")
@@ -44,7 +45,7 @@ RESULTS_DIR = Path("results")
 # ---------------------------------------------------------------------------
 
 
-def extract_ontology(client: anthropic.Anthropic, document_text: str) -> dict:
+def extract_ontology(client: anthropic.AnthropicVertex, document_text: str, model: str) -> dict:
     """
     Call the Claude API to extract ontology elements from a document.
     Retries up to MAX_RETRIES times with exponential backoff on rate-limit
@@ -66,7 +67,7 @@ def extract_ontology(client: anthropic.Anthropic, document_text: str) -> dict:
     for attempt in range(MAX_RETRIES):
         try:
             response = client.messages.create(
-                model=MODEL,
+                model=model,
                 max_tokens=MAX_TOKENS,
                 system=SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -145,18 +146,24 @@ def run(docs_dir: Path, max_docs: int | None) -> None:
     # Ensure results directory exists
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Initialise client — reads ANTHROPIC_API_KEY from environment
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
+    # ── Vertex AI 클라이언트 초기화 ────────────────────────────────────────────
+    project_id = os.environ.get("GCP_PROJECT_ID")
+    if not project_id:
         print(
-            "Error: ANTHROPIC_API_KEY is not set.\n"
-            "Set it with:  export ANTHROPIC_API_KEY=your_key\n"
-            "Or create a .env file with ANTHROPIC_API_KEY=your_key",
+            "Error: GCP_PROJECT_ID is not set.\n"
+            "Set it with:  export GCP_PROJECT_ID=your-gcp-project-id\n"
+            "Or add GCP_PROJECT_ID=... to a .env file",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    client = anthropic.Anthropic(api_key=api_key)
+    location = os.environ.get("VERTEX_LOCATION", "us-east5")
+    model = os.environ.get("VERTEX_MODEL_ID", "claude-sonnet-5@20251001")
+
+    print(f"Vertex AI — project: {project_id}, region: {location}, model: {model}\n")
+
+    # 인증: GCP ADC 자동 처리 (VM 서비스 계정 또는 gcloud auth application-default login)
+    client = anthropic.AnthropicVertex(project_id=project_id, region=location)
 
     succeeded = 0
     failed = 0
@@ -168,7 +175,7 @@ def run(docs_dir: Path, max_docs: int | None) -> None:
         document_text = md_path.read_text(encoding="utf-8")
 
         try:
-            result = extract_ontology(client, document_text)
+            result = extract_ontology(client, document_text, model)
         except RuntimeError as exc:
             print(f"FAILED\n  {exc}")
             failed += 1
@@ -177,7 +184,9 @@ def run(docs_dir: Path, max_docs: int | None) -> None:
         # Annotate result with source metadata
         result["_meta"] = {
             "source_file": str(md_path),
-            "model": MODEL,
+            "model": model,
+            "vertex_project": project_id,
+            "vertex_location": location,
         }
 
         out_path = RESULTS_DIR / f"{doc_name}.json"
