@@ -1,4 +1,4 @@
-"""Extraction pipeline: Notion → Claude Vertex AI → DRAFT objects/links/actions."""
+"""Extraction pipeline: text/Notion → Claude Vertex AI → DRAFT objects/links/actions."""
 from __future__ import annotations
 
 import logging
@@ -28,11 +28,19 @@ VALID_CARDINALITY = {"1:1", "1:N", "N:1", "N:M"}
 # Main pipeline entry point (called as a FastAPI background task)
 # ---------------------------------------------------------------------------
 
-async def run_extraction_job(job_id: uuid.UUID, source_refs: list[str]) -> None:
+async def run_extraction_job(
+    job_id: uuid.UUID,
+    source_refs: list[str],
+    source_type: str = "notion",
+) -> None:
     """Main extraction pipeline. Runs as a FastAPI background task.
 
     Opens its own DB session because BackgroundTasks execute outside the
     request lifecycle and the request's session has already been closed.
+
+    source_type:
+      - "notion": source_refs are Notion page URLs or IDs → fetched via Notion API
+      - "text":   source_refs are raw text strings → used directly (no Notion call)
     """
     async with AsyncSessionLocal() as db:
         # Load job record
@@ -49,30 +57,38 @@ async def run_extraction_job(job_id: uuid.UUID, source_refs: list[str]) -> None:
         failed_count = 0
         error_details: list[dict] = []
 
-        for ref in source_refs:
-            page_id = extract_page_id(ref)
+        for idx, ref in enumerate(source_refs):
+            label = f"text[{idx}]" if source_type == "text" else extract_page_id(ref)
             try:
-                # 1. Fetch Notion page text
-                logger.info(f"[job={job_id}] Fetching Notion page: {page_id}")
-                text = await get_page_text(page_id)
-                if not text.strip():
-                    raise ValueError("Page is empty or has no readable text")
+                if source_type == "text":
+                    # source_ref IS the document text — no Notion call needed
+                    text = ref
+                    if not text.strip():
+                        raise ValueError("입력 텍스트가 비어 있습니다")
+                    logger.info(f"[job={job_id}] Using raw text input ({len(text)} chars)")
+                else:
+                    # Fetch from Notion
+                    page_id = label
+                    logger.info(f"[job={job_id}] Fetching Notion page: {page_id}")
+                    text = await get_page_text(page_id)
+                    if not text.strip():
+                        raise ValueError("Page is empty or has no readable text")
 
                 # 2. Extract ontology with Claude Vertex AI
-                logger.info(f"[job={job_id}] Extracting ontology from page: {page_id}")
+                logger.info(f"[job={job_id}] Extracting ontology from: {label}")
                 extracted = await extract_ontology_from_text(text)
 
                 # 3. Persist extracted items as DRAFT records
-                await _save_extracted(db, extracted, ref, job_id)
+                await _save_extracted(db, extracted, ref, job_id, source_type)
 
                 success_count += 1
-                logger.info(f"[job={job_id}] Page {page_id} → OK")
+                logger.info(f"[job={job_id}] {label} → OK")
 
             except Exception as e:
                 failed_count += 1
-                msg = f"Page {page_id}: {type(e).__name__}: {e}"
+                msg = f"{label}: {type(e).__name__}: {e}"
                 logger.warning(f"[job={job_id}] {msg}")
-                error_details.append({"ref": ref, "error": str(e)})
+                error_details.append({"ref": label, "error": str(e)})
 
         # Update job status based on outcomes
         if failed_count == 0:
@@ -101,9 +117,12 @@ async def _save_extracted(
     extracted: dict,
     source_ref: str,
     job_id: uuid.UUID,
+    source_type: str = "notion",
 ) -> None:
     """Save extracted objects/links/actions as DRAFT items."""
-    source_refs_payload = [{"type": "notion", "ref": source_ref, "job_id": str(job_id)}]
+    # For text source_type, store a truncated preview instead of the full text
+    ref_value = source_ref[:200] + "…" if source_type == "text" and len(source_ref) > 200 else source_ref
+    source_refs_payload = [{"type": source_type, "ref": ref_value, "job_id": str(job_id)}]
 
     # name → saved object UUID mapping (used for link/action resolution)
     name_to_id: dict[str, uuid.UUID] = {}

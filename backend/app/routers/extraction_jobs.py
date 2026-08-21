@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
+import pydantic
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -28,8 +29,15 @@ router = APIRouter(prefix="/extraction-jobs", tags=["Extraction Jobs"])
 # ---------------------------------------------------------------------------
 
 class ExtractionJobRequest(BaseModel):
-    source_type: str = "notion"
+    source_type: str = "notion"  # "notion" | "text"
     source_refs: list[str]
+
+    @pydantic.field_validator("source_type")
+    @classmethod
+    def _check_source_type(cls, v: str) -> str:
+        if v not in ("notion", "text"):
+            raise ValueError(f"source_type은 'notion' 또는 'text' 여야 합니다 (받은 값: '{v}')")
+        return v
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +120,7 @@ async def create_extraction_job(
     await db.flush()
     await db.commit()
 
-    background_tasks.add_task(run_extraction_job, job.id, body.source_refs)
+    background_tasks.add_task(run_extraction_job, job.id, body.source_refs, body.source_type)
 
     return {"job_id": str(job.id), "status": "RUNNING", "total_docs": len(body.source_refs)}
 

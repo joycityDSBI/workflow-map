@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 JobStatus = Literal[
     "RUNNING", "COMPLETED", "PARTIAL_SUCCESS", "FAILED", "RATE_LIMITED"
 ]
-SourceType = Literal["notion", "file"]
+SourceType = Literal["notion", "file", "text"]
 
 
 class ExtractionJobCreate(BaseModel):
