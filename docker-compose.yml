@@ -43,10 +43,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://34.173.140.181:8000
     container_name: workflow-map-frontend
     restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_URL: http://34.173.140.181:8000
     ports:
       - "3000:3000"
     depends_on:
