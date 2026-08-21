@@ -28,6 +28,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://wfmap:wfmap_dev_pw@db:5432/workflow_map
       DATABASE_SYNC_URL: postgresql+psycopg2://wfmap:wfmap_dev_pw@db:5432/workflow_map
+      GOOGLE_APPLICATION_CREDENTIALS: /app/gcp-sa-key.json
     ports:
       - "8000:8000"
     depends_on:

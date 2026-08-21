@@ -1,3 +1,7 @@
+# GCP Service Account Keys (never commit!)
+backend/gcp-sa-key.json
+backend/*-sa-key.json
+
 # Python
 __pycache__/
 *.py[cod]
