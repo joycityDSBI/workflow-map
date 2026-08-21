@@ -62,6 +62,14 @@ def create_access_token(
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
+def decode_token(token: str) -> Optional[dict]:
+    """Decode a JWT token and return the payload, or None if invalid/expired."""
+    try:
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    except JWTError:
+        return None
+
+
 # ---------------------------------------------------------------------------
 # FastAPI dependencies
 # ---------------------------------------------------------------------------

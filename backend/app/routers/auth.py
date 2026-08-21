@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import select
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import (
@@ -17,6 +19,9 @@ from app.core.auth import (
 from app.database import get_db
 from app.models.users import User
 from app.schemas.auth import CurrentUser, RegisterRequest, TokenResponse
+
+# auto_error=False → 토큰 없어도 401 안 냄 (register 부트스트랩용)
+_optional_bearer = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -51,14 +56,41 @@ async def login(
     "/register",
     response_model=CurrentUser,
     status_code=status.HTTP_201_CREATED,
-    summary="Register a new user (admin only)",
+    summary="Register a new user (open when no users exist; admin token required otherwise)",
 )
 async def register(
     body: RegisterRequest,
-    _: CurrentUser = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
+    token: Optional[str] = Depends(_optional_bearer),
 ) -> CurrentUser:
-    """Create a new user. Requires admin role."""
+    """Create a new user.
+    - 사용자 0명: 인증 없이 첫 admin 계정 생성 (부트스트랩)
+    - 사용자 존재: Bearer admin 토큰 필요
+    """
+    count_result = await db.execute(select(func.count()).select_from(User))
+    user_count = count_result.scalar_one()
+
+    if user_count > 0:
+        # 기존 사용자 있음 → admin 토큰 검증
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="admin 토큰이 필요합니다",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        from app.core.auth import decode_token
+        payload = decode_token(token)
+        if payload is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 토큰")
+        # DB에서 admin 확인
+        caller = await db.execute(select(User).where(User.username == payload.get("sub")))
+        caller_user = caller.scalar_one_or_none()
+        if caller_user is None or caller_user.role != "admin":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin 권한이 필요합니다")
+    else:
+        # 부트스트랩: 첫 번째 사용자는 무조건 admin
+        body.role = "admin"
+
     # Check for duplicate username
     existing = await db.execute(select(User).where(User.username == body.username))
     if existing.scalar_one_or_none() is not None:
