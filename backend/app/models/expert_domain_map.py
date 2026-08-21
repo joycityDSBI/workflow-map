@@ -6,7 +6,8 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import TIMESTAMPTZ, UUID
+from sqlalchemy.dialects.postgresql import UUID
+from app.models.base import TIMESTAMPTZ
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base

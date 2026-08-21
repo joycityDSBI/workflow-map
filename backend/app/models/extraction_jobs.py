@@ -7,7 +7,8 @@ from datetime import datetime
 from typing import Any, List, Optional
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMPTZ, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from app.models.base import TIMESTAMPTZ
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base

@@ -18,8 +18,11 @@ from typing import Any, List, Optional
 
 import sqlalchemy as sa
 from sqlalchemy import event
-from sqlalchemy.dialects.postgresql import JSONB, NUMERIC, TIMESTAMPTZ, UUID
+from sqlalchemy.dialects.postgresql import JSONB, NUMERIC, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+# TIMESTAMPTZ = PostgreSQL TIMESTAMP WITH TIME ZONE
+TIMESTAMPTZ = sa.TIMESTAMP(timezone=True)
 
 
 class Base(DeclarativeBase):
@@ -27,7 +30,7 @@ class Base(DeclarativeBase):
 
     type_annotation_map = {
         uuid.UUID: UUID(as_uuid=True),
-        datetime: TIMESTAMPTZ,
+        datetime: sa.TIMESTAMP(timezone=True),
         Decimal: NUMERIC(3, 2),
         dict: JSONB,
         list: JSONB,
