@@ -5,23 +5,36 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import get_current_user
 from app.database import get_db
 from app.models.extraction_jobs import ExtractionJob
+from app.schemas.auth import CurrentUser
 from app.schemas.extraction_jobs import (
-    ExtractionJobCreate,
     ExtractionJobListResponse,
     ExtractionJobRead,
 )
+from app.services.extraction import run_extraction_job
 
 router = APIRouter(prefix="/extraction-jobs", tags=["Extraction Jobs"])
 
-# Placeholder: in production this would come from the verified Azure AD token.
-_PLACEHOLDER_ACTOR_ID = "00000000-0000-0000-0000-000000000000"
 
+# ---------------------------------------------------------------------------
+# Request schema
+# ---------------------------------------------------------------------------
+
+class ExtractionJobRequest(BaseModel):
+    source_type: str = "notion"
+    source_refs: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 async def _get_or_404(job_id: uuid.UUID, db: AsyncSession) -> ExtractionJob:
     result = await db.get(ExtractionJob, job_id)
@@ -32,6 +45,10 @@ async def _get_or_404(job_id: uuid.UUID, db: AsyncSession) -> ExtractionJob:
         )
     return result
 
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
 
 @router.get(
     "",
@@ -69,28 +86,35 @@ async def list_jobs(
 
 @router.post(
     "",
-    response_model=ExtractionJobRead,
-    status_code=status.HTTP_201_CREATED,
-    summary="Create (trigger) an extraction job",
+    status_code=202,
+    summary="Trigger extraction from Notion pages",
 )
-async def create_job(
-    payload: ExtractionJobCreate,
+async def create_extraction_job(
+    body: ExtractionJobRequest,
+    background_tasks: BackgroundTasks,
+    current_user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> ExtractionJobRead:
-    """Enqueue a new background extraction job.
+) -> dict:
+    """Enqueue a background extraction job that fetches Notion pages, calls
+    Claude Vertex AI, and saves DRAFT objects/links/actions to PostgreSQL.
 
-    In production, the Azure AD token's ``oid`` claim replaces the placeholder
-    actor ID and the job is handed off to a Celery / background-task worker.
+    Returns HTTP 202 immediately; poll ``GET /extraction-jobs/{job_id}`` for
+    progress and final status.
     """
     job = ExtractionJob(
-        **payload.model_dump(),
-        created_by=_PLACEHOLDER_ACTOR_ID,
+        source_type=body.source_type,
+        source_refs=body.source_refs,
         status="RUNNING",
+        created_by=current_user.id,
+        total_docs=len(body.source_refs),
     )
     db.add(job)
     await db.flush()
-    await db.refresh(job)
-    return ExtractionJobRead.model_validate(job)
+    await db.commit()
+
+    background_tasks.add_task(run_extraction_job, job.id, body.source_refs)
+
+    return {"job_id": str(job.id), "status": "RUNNING", "total_docs": len(body.source_refs)}
 
 
 @router.get(
