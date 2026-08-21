@@ -116,6 +116,8 @@ async def patch_link(
 async def delete_link(
     link_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> None:
+) -> Response:
     link = await _get_or_404(link_id, db)
     await db.delete(link)
+    await db.commit()
+    return Response(status_code=204)

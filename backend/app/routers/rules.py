@@ -110,6 +110,8 @@ async def patch_rule(
 async def delete_rule(
     rule_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> None:
+) -> Response:
     rule = await _get_or_404(rule_id, db)
     await db.delete(rule)
+    await db.commit()
+    return Response(status_code=204)

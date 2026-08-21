@@ -122,3 +122,5 @@ async def delete_object(
 ) -> Response:
     obj = await _get_or_404(object_id, db)
     await db.delete(obj)
+    await db.commit()
+    return Response(status_code=204)

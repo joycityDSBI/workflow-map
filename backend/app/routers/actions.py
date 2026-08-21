@@ -116,6 +116,8 @@ async def patch_action(
 async def delete_action(
     action_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> None:
+) -> Response:
     action = await _get_or_404(action_id, db)
     await db.delete(action)
+    await db.commit()
+    return Response(status_code=204)
