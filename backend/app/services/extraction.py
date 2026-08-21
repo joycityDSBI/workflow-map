@@ -143,7 +143,7 @@ async def _save_extracted(
             properties=obj_data.get("properties", []),
             source_refs=source_refs_payload,
             confidence=confidence,
-            status="DRAFT",
+            status="PENDING_REVIEW",
         )
         db.add(obj)
         await db.flush()  # populate obj.id
@@ -178,7 +178,7 @@ async def _save_extracted(
             is_derived=link_data.get("is_derived", False),
             source_refs=source_refs_payload,
             confidence=confidence,
-            status="DRAFT",
+            status="PENDING_REVIEW",
         )
         db.add(link)
 
@@ -206,7 +206,7 @@ async def _save_extracted(
             trigger=trigger,
             source_refs=source_refs_payload,
             confidence=confidence,
-            status="DRAFT",
+            status="PENDING_REVIEW",
         )
         db.add(action)
 

@@ -124,6 +124,7 @@ async def health_check() -> dict:
 # ---------------------------------------------------------------------------
 from app.routers import objects, links, actions, rules, graph, extraction_jobs  # noqa: E402
 from app.routers import auth as auth_router  # noqa: E402
+from app.routers import review as review_router  # noqa: E402
 
 API_PREFIX = "/api/v1"
 
@@ -134,3 +135,4 @@ app.include_router(actions.router, prefix=API_PREFIX)
 app.include_router(rules.router, prefix=API_PREFIX)
 app.include_router(graph.router, prefix=API_PREFIX)
 app.include_router(extraction_jobs.router, prefix=API_PREFIX)
+app.include_router(review_router.router, prefix=API_PREFIX)
