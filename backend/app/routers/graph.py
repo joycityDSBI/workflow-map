@@ -52,8 +52,10 @@ async def get_graph(
     nodes: List[Dict[str, Any]] = [
         {
             "id": str(obj.id),
-            "label": obj.name,
+            "name": obj.name,      # frontend GraphData type expects 'name'
+            "label": obj.name,     # keep for D3 compatibility
             "category": obj.category,
+            "status": obj.status,  # top-level for frontend type
             "data": {
                 "status": obj.status,
                 "properties": obj.properties,
