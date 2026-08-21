@@ -3,16 +3,17 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import ReviewCard from '@/components/ReviewCard'
-import { objectsApi, linksApi, actionsApi, reviewApi } from '@/lib/api'
+import { objectsApi, linksApi, actionsApi, rulesApi, reviewApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { OntologyObject } from '@/types'
 
-type TabKey = 'objects' | 'links' | 'actions'
+type TabKey = 'objects' | 'links' | 'actions' | 'rules'
 
 const TAB_LABELS: Record<TabKey, string> = {
   objects: '개체',
   links: '관계',
   actions: '행동',
+  rules: '규칙',
 }
 
 const STATUS = 'PENDING_REVIEW'
@@ -25,6 +26,7 @@ export default function ReviewPage() {
     objects: [],
     links: [],
     actions: [],
+    rules: [],
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -41,13 +43,14 @@ export default function ReviewPage() {
       objectsApi.list(STATUS),
       linksApi.list(STATUS),
       actionsApi.list(STATUS),
+      rulesApi.list(STATUS),
     ])
-      .then(([objRes, linkRes, actRes]) => {
+      .then(([objRes, linkRes, actRes, ruleRes]) => {
         const parse = (res: any) => {
           const d = res.data
           return Array.isArray(d) ? d : (d.items ?? d.results ?? [])
         }
-        setItems({ objects: parse(objRes), links: parse(linkRes), actions: parse(actRes) })
+        setItems({ objects: parse(objRes), links: parse(linkRes), actions: parse(actRes), rules: parse(ruleRes) })
       })
       .catch(() => setError('목록을 불러오는 데 실패했습니다.'))
       .finally(() => setLoading(false))

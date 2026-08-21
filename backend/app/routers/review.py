@@ -17,11 +17,12 @@ from app.database import get_db
 from app.models.actions import Action
 from app.models.links import Link
 from app.models.objects import Object
+from app.models.rules import Rule
 from app.schemas.auth import CurrentUser
 
 router = APIRouter(prefix="/review", tags=["Review"])
 
-REVIEWABLE_MODELS = [Object, Link, Action]
+REVIEWABLE_MODELS = [Object, Link, Action, Rule]
 
 
 class RejectRequest(BaseModel):

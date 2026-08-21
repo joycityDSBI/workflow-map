@@ -51,6 +51,10 @@ export const actionsApi = {
   list: (status?: string) => api.get('/api/v1/actions', { params: status ? { status } : {} }),
 }
 
+export const rulesApi = {
+  list: (status?: string) => api.get('/api/v1/rules', { params: status ? { status } : {} }),
+}
+
 export const reviewApi = {
   approve: (id: string) => api.post(`/api/v1/review/${id}/approve`),
   reject: (id: string, reason: string) => api.post(`/api/v1/review/${id}/reject`, { reason }),

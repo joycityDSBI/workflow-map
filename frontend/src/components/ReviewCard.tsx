@@ -18,7 +18,7 @@ const CATEGORY_COLORS: Record<ObjectCategory, string> = {
   record: 'bg-violet-100 text-violet-700',
 }
 
-type ItemType = 'objects' | 'links' | 'actions'
+type ItemType = 'objects' | 'links' | 'actions' | 'rules'
 
 interface ReviewCardProps {
   item: any   // OntologyObject | Link | Action
@@ -50,6 +50,23 @@ function ItemSummary({ item, itemType }: { item: any; itemType: ItemType }) {
           <span className="text-xs text-slate-500">대응: {item.cardinality}</span>
           {item.is_derived && <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">파생</span>}
         </div>
+      </div>
+    )
+  }
+  if (itemType === 'rules') {
+    return (
+      <div className="mb-2">
+        <h3 className="font-semibold text-slate-800 text-base">{item.title ?? item.name}</h3>
+        {item.description && (
+          <p className="text-sm text-slate-500 mt-1">{item.description}</p>
+        )}
+        {item.applies_to_actions?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {item.applies_to_actions.map((a: string, i: number) => (
+              <span key={i} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{a}</span>
+            ))}
+          </div>
+        )}
       </div>
     )
   }

@@ -20,6 +20,7 @@ SYSTEM_PROMPT = """당신은 게임 회사의 이벤트 운영 문서에서 온�
 - Objects: 행위 주체(actor), 이벤트 도메인 개체(domain), 트랜잭션(tx), CS 처리(cs), 기록(record)
 - Links: 두 Object 간 관계 (label, cardinality, 파생 여부)
 - Actions: 행위 주체가 수행하는 동작 (입력/출력/전제조건)
+- Rules: 행동을 제약하거나 규율하는 비즈니스 규칙 (예: "구매 한도", "중복 참여 불가", "조건부 지급")
 
 출력 형식: 아래 JSON 스키마를 반드시 준수하고, JSON만 출력하세요 (마크다운 코드 블록 없이).
 
@@ -32,6 +33,9 @@ SYSTEM_PROMPT = """당신은 게임 회사의 이벤트 운영 문서에서 온�
   ],
   "actions": [
     {"name": "string", "actor_name": "string", "reads": ["string"], "creates": ["string"], "updates": ["string"], "preconditions": "string", "outcomes": "string", "trigger": "manual_ui|scheduled|notion_webhook", "confidence": 0.0, "evidence_quote": "string"}
+  ],
+  "rules": [
+    {"title": "string", "description": "string", "applies_to_actions": ["string"], "confidence": 0.0, "evidence_quote": "string"}
   ]
 }"""
 
@@ -76,7 +80,7 @@ async def extract_ontology_from_text(document_text: str) -> dict:
         logger.warning(
             "GCP_PROJECT_ID is not configured — skipping Claude call and returning empty result"
         )
-        return {"objects": [], "links": [], "actions": []}
+        return {"objects": [], "links": [], "actions": [], "rules": []}
 
     client = _get_client()
 
@@ -94,7 +98,7 @@ async def extract_ontology_from_text(document_text: str) -> dict:
                         "=== 문서 내용 ===\n"
                         f"{document_text}\n"
                         "=================\n\n"
-                        "위 문서에서 Objects, Links, Actions를 추출하여 JSON 형식으로만 출력하세요."
+                        "위 문서에서 Objects, Links, Actions, Rules를 추출하여 JSON 형식으로만 출력하세요."
                     ),
                 }
             ],

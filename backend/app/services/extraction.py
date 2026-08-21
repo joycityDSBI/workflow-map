@@ -13,6 +13,7 @@ from app.models.actions import Action as OntologyAction
 from app.models.extraction_jobs import ExtractionJob
 from app.models.links import Link as OntologyLink
 from app.models.objects import Object as OntologyObject
+from app.models.rules import Rule as OntologyRule
 from app.services.claude_client import extract_ontology_from_text
 from app.services.notion_client import extract_page_id, get_page_text
 from app.database import AsyncSessionLocal
@@ -209,6 +210,22 @@ async def _save_extracted(
             status="PENDING_REVIEW",
         )
         db.add(action)
+
+    # ------------------------------------------------------------------
+    # Rules
+    # ------------------------------------------------------------------
+    for rule_data in extracted.get("rules", []):
+        confidence = _parse_confidence(rule_data.get("confidence"))
+
+        rule = OntologyRule(
+            title=rule_data.get("title", "제목없음"),
+            description=rule_data.get("description"),
+            applies_to_actions=rule_data.get("applies_to_actions", []),
+            source_refs=source_refs_payload,
+            confidence=confidence,
+            status="PENDING_REVIEW",
+        )
+        db.add(rule)
 
     await db.flush()
 
