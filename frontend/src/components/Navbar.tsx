@@ -42,6 +42,17 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             온톨로지 맵
           </Link>
 
+          <Link
+            href="/extract"
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              pathname === '/extract'
+                ? 'bg-slate-600 text-white'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            추출
+          </Link>
+
           {isReviewVisible && (
             <Link
               href="/review"

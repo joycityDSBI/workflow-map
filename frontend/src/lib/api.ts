@@ -55,3 +55,10 @@ export const reviewApi = {
   approve: (id: string) => api.post(`/api/v1/review/${id}/approve`),
   reject: (id: string, reason: string) => api.post(`/api/v1/review/${id}/reject`, { reason }),
 }
+
+export const extractionApi = {
+  create: (sourceType: 'text' | 'notion', sourceRefs: string[]) =>
+    api.post('/api/v1/extraction-jobs', { source_type: sourceType, source_refs: sourceRefs }),
+  get: (jobId: string) => api.get(`/api/v1/extraction-jobs/${jobId}`),
+  list: () => api.get('/api/v1/extraction-jobs?page_size=10'),
+}
