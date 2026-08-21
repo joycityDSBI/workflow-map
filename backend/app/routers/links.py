@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -110,6 +110,7 @@ async def patch_link(
 @router.delete(
     "/{link_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
     summary="Delete an ontology link",
 )
 async def delete_link(

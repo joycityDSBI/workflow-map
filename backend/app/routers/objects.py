@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -113,11 +113,12 @@ async def patch_object(
 @router.delete(
     "/{object_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
     summary="Delete an ontology object",
 )
 async def delete_object(
     object_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> None:
+) -> Response:
     obj = await _get_or_404(object_id, db)
     await db.delete(obj)
